@@ -9,7 +9,7 @@ shinyUI(fluidPage(
       #tab panel to split information
       tabsetPanel(type="tabs",
                   #tab containind data
-                  tabPanel("Data",br(), checkboxInput("filterCut", "Filter by cut", value = TRUE),
+                  tabPanel("Basic Data exploration",br(), checkboxInput("filterCut", "Filter by cut", value = TRUE),
                            selectInput(inputId = "cut",
                                        label = "Choose a diamond cut:",
                                        choices = c("Fair", "Good", "Very Good","Ideal","Premium")),
@@ -31,7 +31,7 @@ shinyUI(fluidPage(
                     h5(" This page displays the diamonds data available in the UsingR package.
                        It contains four diferent tabs with different pieces of information:"),
                     h5("\n"),
-                    strong("1. Data Tab."),
+                    strong("1. Basic data ."),
                     h5("\n"),
                     h5("Shows a summary of the Diamonds dataset and the first three rows of values.
                        The information can be filtered by diamond cut clicking the checkbox and selecting the cut type in the dropdown list.
@@ -52,8 +52,13 @@ shinyUI(fluidPage(
                     h5("Tabs 2 and 3 can be used together to see how the estimated price value changes when filtering data and model by color."),
                     strong("4. How-to."),
                     h5("\n"),
-                    h5(" Finally the last tab shows the basic documnentation you're reading on how to use the aplication.")
-
+                    h5(" Finally the last tab shows the basic documnentation you're reading on how to use the aplication."),
+                    h5("\n"),
+                    h5("Please refer to the project presentation at",
+                           a("https://agizes.github.io/DDP-datascience/project/ddp-w4_slidify.html",
+                             href = "https://agizes.github.io/DDP-datascience/project/ddp-w4_slidify.html",
+                             target = "_blank")
+                    )
                   )
                 )
       )

@@ -1,0 +1,203 @@
+---
+title: "Diamond analysis"
+author: "A.Izquierdo"
+date: "27/5/2020"
+output: 
+  slidy_presentation: 
+runtime: shiny
+#output: html_document
+fontsize: 10pt
+---
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE,out.width="1400",out.height = "1000")
+```
+
+### Introduction
+This is a presentation showing a quick data analysis App published in ShyniApps.io in this [link](https://agizes.shinyapps.io/w4-assignment/).
+The github repo with the source files is in this [link](https://github.com/agizes/DDP-datascience/tree/master/project)
+We've used the *diamonds* dataset as source of information.
+In this presentation we'll go through the application and explain its usage.
+
+The *user interface* file contains four tabs.
+
+ -  **Basic data.** Shows a summary of the Diamonds dataset and the first three rows of values. The information can be filtered by diamond cut clicking the checkbox and selecting the cut type in the dropdown list. In case the checkbox is not selected, no filter is applied.
+ 
+ -  **Simple plot and model.** Displays a carat vs. price plot and a linear model fitting prices based on the number of carats. With a slider, the user can move along the model selecting the number of carats and get an estimation of the price (based on the model prediction.
+
+ -  **Filtered plot and model.** In this tab the user can select the diamond color and both the plot and a liner model (carats vs. price) will be filtered with the selection. Like in tab 2, the user can move along the linear fit selecting the number of carats with a slider to see the estimated diamond price.
+
+ -  **How-to.** Finally the last tab shows the basic documnentation you're reading on how to use the aplication
+
+
+```{r libsanddataset}
+library(shiny)
+library(webshot)
+library(UsingR)
+library(dplyr)
+library(httpuv)
+library(caTools)
+data("diamonds")
+```
+
+### Application
+```{r UI1, message=FALSE,echo=FALSE,eval=TRUE,out.width="1400",out.height = "2000"}
+
+ui=
+shinyUI(fluidPage(
+  titlePanel( div(HTML("<em><h4>Diamonds analysis</em>"))),
+  
+  mainPanel(
+    #tab panel to split information
+    tabsetPanel(type="tabs",selected = "Basic Data exploration",
+                #tab containind data
+                tabPanel("Basic Data exploration",br(), checkboxInput("filterCut", "Filter by cut", value = TRUE),
+                         selectInput(inputId = "cut",
+                                     label = "Choose a diamond cut:",
+                                     choices = c("Fair", "Good", "Very Good","Ideal","Premium")),
+                         verbatimTextOutput("summary"),
+                         # Output: HTML table with requested number of observations
+                         tableOutput("view")),
+                #tab containing plot
+                tabPanel("Simple plot and model",br(),
+                         sliderInput("slider", "What is the price of the diamond?", 0, 3.5, value = 1,step=0.25),
+                         #checkboxInput("showModel", "Show/Hide Model", value = TRUE),
+                         h5("Predicted diamond price (Sin$):",textOutput("pred"),plotOutput("plot"))),
+                #tab containing filtered plot
+                tabPanel("Filtered plot and model",br(),
+                         selectInput(inputId = "color",label = "Choose a diamond color:",choices = c("D","F","G","H","I","J")),
+                         sliderInput("slider2", "What is the price of the diamond?", 0, 3.5, value = 1,step=0.25),
+                         h5("Predicted diamond price (Sin$):",textOutput("pred2"),plotOutput("plot2"))),
+                #tab containing how-to
+                tabPanel("How to use the application",br(),
+                         h5(" This page displays the diamonds data available in the UsingR package.
+                       It contains four diferent tabs with different pieces of information:"),
+                         h5("\n"),
+                         strong("1. Basic data ."),
+                         h5("\n"),
+                         h5("Shows a summary of the Diamonds dataset and the first three rows of values.
+                       The information can be filtered by diamond cut clicking the checkbox and selecting the cut type in the dropdown list.
+                       In case the checkbox is not selected, no filter is applied."),
+                         h5("\n"),
+                         strong(("2. Simple plot and model.")),
+                         h5("\n"),
+                         h5("Displays a carat vs. price plot and a linear model fitting prices based on the number of carats.
+                      With a slider, the user can move along the model selecting the number of carats and get an estimation of the price (based
+                      on the model prediction."),
+                         h5("\n"),
+                         strong("3. Filtered plot and model."),
+                         h5("\n"),
+                         h5("In this tab the user can select the diamond color and both the plot and a liner model (carats vs. price) will be
+                       filtered with the selection. Like in tab 2, the user can move along the linear fit selecting the number of carats
+                       with a slider to see the estimated diamond price."),
+                         h5("\n"),
+                         h5("Tabs 2 and 3 can be used together to see how the estimated price value changes when filtering data and model by color."),
+                         strong("4. How-to."),
+                         h5("\n"),
+                         h5(" Finally the last tab shows the basic documnentation you're reading on how to use the aplication."),
+                         h5("\n"),
+                         h5("Please refer to the project presentation at",
+                            a("https://agizes.github.io/DDP-datascience/project/ddp-w4_slidy.html",
+                              href = "https://agizes.github.io/DDP-datascience/project/ddp-w4_slidy.html",
+                              target = "_blank")
+                         )
+                )
+    )
+  )
+)
+)
+
+
+server=
+shinyServer(function(input, output) {
+  #linear model
+  model<- lm(price ~ carat, data = diamonds)
+  
+  modelpred <- reactive({
+    caratInput <- input$slider
+    predict(model, newdata = data.frame(carat = caratInput))
+  })
+  #diamonds scatterplot (1)
+  output$plot<- renderPlot({
+    caratInput <- input$slider
+    plot(diamonds$carat, diamonds$price, xlab = "Mass(carats)", ylab = "Price (Sin$)",
+         bg="lightblue",cex=1,pch=21,frame=FALSE,col = alpha("blue", 0.05),
+         xlim = c(0, 3.5))
+    # plot line with the model
+    abline(model, col = "red", lwd = 2)
+    #}
+    points(caratInput, modelpred(), col = "red", pch = 16, cex = 2)
+
+  })
+  #diamonds prediction (1)
+  output$pred<- renderText({modelpred()})
+  
+  
+  cutInput <- reactive({
+    switch(input$cut,"Fair" = "Fair", "Good" = "Good","Very Good" = "Very Good","Ideal"="Ideal", "Premium"="Premium")
+  })
+  
+  
+  output$summary <- renderPrint({
+    cutSelected <- cutInput()
+    if(input$filterCut){
+      summary(diamonds[diamonds$cut==cutSelected,])
+    }
+    else{
+      summary(diamonds)
+    }
+  })
+  
+  output$view <- renderTable({
+    if(input$filterCut){
+      head(diamonds[diamonds$cut==cutInput(),], n = 3)
+    }
+    else{
+      head(diamonds, n = 3)
+    }
+  })
+  
+  colorInput <- reactive({
+    switch(input$color,"D" = "D", "F" = "F","G" = "G","H"="H", "I"="I","J"="J")
+  })
+  
+  
+  #model2<- lm(price ~ carat, data = diamonds)
+  modelpred2 <- reactive({
+    
+    colorSelected <- input$color
+    caratInput2 <- input$slider2
+    model2<- lm(price ~ carat, data = filter(diamonds,color==colorSelected))
+    predict(model2, newdata = data.frame(carat = caratInput2,color=colorSelected))
+    
+  })
+  
+  #diamonds scatterplot (2)
+  output$plot2<- renderPlot({
+    caratInput2 <- input$slider2
+    colorSelected <- colorInput()
+    
+    model2<- lm(price ~ carat, data = filter(diamonds,color==colorSelected))
+    
+    with(diamonds[(diamonds$color == colorSelected),],
+         
+         plot(carat, price, xlab = "Mass(carats)", ylab = "Price (Sin$)",
+              bg="lightgreen",cex=1,pch=21,frame=FALSE,col = alpha("green", 0.05),
+              xlim = c(0, 3.5)))
+    # plot line with the model
+    abline(model2, col = "black", lwd = 2)
+    points(caratInput2, modelpred2(), col = "black", pch = 16, cex = 2)
+    
+    
+  })
+  #diamonds prediction (2)
+  output$pred2<- renderText({modelpred2()})
+
+  
+})
+
+
+# Create Shiny app ----
+shinyApp(ui, server,options = list(height = 700))
+
+```

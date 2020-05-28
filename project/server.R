@@ -2,7 +2,7 @@ library(shiny)
 library(webshot)
 library(UsingR)
 library(dplyr)
-data(diamond)
+data("diamonds")
 
 
 shinyServer(function(input, output) {
@@ -27,7 +27,7 @@ shinyServer(function(input, output) {
           col = "red", bty = "n", cex = 1.2)
 
   })
-  #diamonds prediction (1)
+  #diamondss prediction (1)
   output$pred<- renderText({modelpred()})
 
 
@@ -60,7 +60,7 @@ shinyServer(function(input, output) {
   })
 
 
-  #model2<- lm(price ~ carat, data = diamonds)
+  #model2<- lm(price ~ carat, data = diamondss)
   modelpred2 <- reactive({
 
     colorSelected <- input$color
@@ -70,7 +70,7 @@ shinyServer(function(input, output) {
 
   })
 
-  #diamonds scatterplot (2)
+  #diamondss scatterplot (2)
   output$plot2<- renderPlot({
     caratInput2 <- input$slider2
     colorSelected <- colorInput()
@@ -88,6 +88,6 @@ shinyServer(function(input, output) {
 
 
   })
-  #diamonds prediction (2)
+  #diamondss prediction (2)
   output$pred2<- renderText({modelpred2()})
   })
